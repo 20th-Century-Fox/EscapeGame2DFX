@@ -1,7 +1,5 @@
 package game;
 
-package game;
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,7 +16,7 @@ import javafx.stage.Stage;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
-public class EscapeLightsFX extends Application {
+public class EscapeGame2DFX extends Application {
 
     // --- Level symbols ---
     // # wall, . floor, @ player, L lamp(off), * lamp(on), S switch, D locked door, / open door, E exit
