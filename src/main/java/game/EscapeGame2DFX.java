@@ -14,6 +14,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -63,26 +66,11 @@ public class EscapeGame2DFX extends Application {
     private Scene instructionsScene;
     private Scene gameScene;
 
- // --- Player sprite ---
-    private ImageView playerView;
-    private Image playerImage;
-    private int lastPr = -1, lastPc = -1;
-
-    // --- Lamp sprite ---
-    private Image lampOffImage;
-    private Image lampOnImage;
-
- // --- Door sprite ---
-    private Image doorClosedImage;
-    private Image doorOpenImage;
+ // --- Win overlay ---
+    private StackPane gameLayer;
+    private ImageView winImage;
     
- // --- Switch sprite ---
-    private Image switchImage;
-    
- // --- Exit sprite ---
-    private Image exitImage;
-
-    
+     
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -189,10 +177,25 @@ public class EscapeGame2DFX extends Application {
         board.setVgap(2);
         board.setAlignment(Pos.CENTER);
 
+        var winUrl = getClass().getResource("/images/you_win.png");
+        if (winUrl != null) {
+            Image img = new Image(winUrl.toExternalForm());
+            winImage = new ImageView(img);
+            winImage.setPreserveRatio(true);
+            winImage.setFitWidth(520);
+            winImage.setVisible(false);
+            winImage.setMouseTransparent(true); 
+        } else {
+            winImage = new ImageView();
+            winImage.setVisible(false);
+            System.out.println("Missing /images/you_win.png");
+        }
+        
+        StackPane gameLayer = new StackPane(board,winImage);
         BorderPane root = new BorderPane();
         root.setTop(top);
-        root.setCenter(board);
-        
+        root.setCenter(gameLayer);
+
      // Build the board UI once; we will fill it when we resetGame()
         // (tiles array depends on grid size, so we build after resetGame)
         resetGame();
@@ -203,6 +206,7 @@ public class EscapeGame2DFX extends Application {
     private void resetGame() {
         loadLevel(LEVEL1);
         recomputeLighting();
+        winImage.setVisible(false);
 
         // rebuild grid UI if needed (first time or after a different-size level)
         tiles = new Rectangle[grid.length][grid[0].length];
@@ -297,7 +301,8 @@ public class EscapeGame2DFX extends Application {
         pr = nr; pc = nc;
         
         if (grid[pr][pc] == EXIT) {
-            status.setText("Room Complete! You reached the exit. (Menu → Start again)");
+            status.setText("YOU WIN!");
+            winImage.setVisible(true);
         } else {
             status.setText("Moved.");
         }
