@@ -21,13 +21,15 @@ public class EscapeGame2DFX extends Application {
     // --- Level symbols ---
     // # wall, . floor, @ player, L lamp(off), * lamp(on), S switch, D locked door, / open door, E exit
     private static final String[] LEVEL1 = {
-            "###########",
-            "#..*....#..#",
-            "#.#####.#..#",
-            "#...@...#..#",
-            "#####.#####E",
-            "#.........##",
-            "###########"
+    		"@.*###########",
+            "#.....D..L..##",
+            "#.##..##..#.D#",
+            "#...#.L....#.#",
+            "#LSD.#...#.#.E",
+            "#.......#.#..#",
+            "#.##L..#L#D..#",
+            "#D.#.#.....L.#",
+            "##############"
     };
 
     private static final char WALL = '#';
