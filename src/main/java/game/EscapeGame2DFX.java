@@ -266,12 +266,31 @@ public class EscapeGame2DFX extends Application {
             playerImage = new Image(purl.toExternalForm());
             playerView = new ImageView(playerImage);
             playerView.setPreserveRatio(true);
-            playerView.setFitWidth(TILE * 0.8);
-            playerView.setFitHeight(TILE * 0.8);
+            playerView.setFitWidth(TILE * 0.9);
+            playerView.setFitHeight(TILE * 0.9);
         } else {
             playerView = null; // fallback if image missing
+            System.out.println("Missing /images/player.png");
         }
 
+        // Load lamp images once
+        var lOff = getClass().getResource("/images/lamp_off.png");
+        var lOn  = getClass().getResource("/images/lamp_on.png");
+        lampOffImage = (lOff == null) ? null : new Image(lOff.toExternalForm());
+        lampOnImage  = (lOn  == null) ? null : new Image(lOn.toExternalForm());
+        
+        // Load door images once
+        var dClosed = getClass().getResource("/images/door_closed.png");
+        var dOpen   = getClass().getResource("/images/door_open.png");
+        doorClosedImage = (dClosed == null) ? null : new Image(dClosed.toExternalForm());
+        doorOpenImage   = (dOpen   == null) ? null : new Image(dOpen.toExternalForm());
+        
+        var sUrl = getClass().getResource("/images/switch.png");
+        switchImage = (sUrl == null) ? null : new Image(sUrl.toExternalForm());
+        
+        var eUrl = getClass().getResource("/images/exit.png");
+        exitImage = (eUrl == null) ? null : new Image(eUrl.toExternalForm());
+        
         for (int r = 0; r < grid.length; r++) {
             for (int c = 0; c < grid[0].length; c++) {
                 Rectangle rect = new Rectangle(TILE, TILE);
@@ -410,14 +429,33 @@ public class EscapeGame2DFX extends Application {
 
     private boolean isNeighborOrSelf(int r, int c, int pr, int pc) {
         return Math.abs(r - pr) <= 1 && Math.abs(c - pc) <= 1;
+    }  
+ // Helper: set/remove a tagged icon (lamp) in a cell
+    private void setCellIcon(int r, int c, Image img, String tag) {
+        cellPanes[r][c].getChildren().removeIf(n -> tag.equals(n.getUserData()));
+        if (img == null) return;
+
+        ImageView iv = new ImageView(img);
+        iv.setMouseTransparent(true); // ✅ allow clicks to pass through
+        iv.setPreserveRatio(true);
+        iv.setFitWidth(TILE * 0.95);
+        iv.setFitHeight(TILE * 0.95);
+        iv.setUserData(tag);
+        cellPanes[r][c].getChildren().add(iv);
     }
     
     private void refresh() {
-        // draw tiles
         for (int r = 0; r < grid.length; r++) {
             for (int c = 0; c < grid[0].length; c++) {
                 Rectangle rect = tiles[r][c];
                 char t = grid[r][c];
+
+                // Always clear lamp icons first
+                setCellIcon(r, c, null, "lamp");
+                setCellIcon(r, c, null, "door");
+                setCellIcon(r, c, null, "switch");
+                setCellIcon(r, c, null, "exit");
+
 
                 // walls always visible
                 if (t == WALL) {
@@ -425,23 +463,78 @@ public class EscapeGame2DFX extends Application {
                     continue;
                 }
 
-                // dark = almost black
                 if (!lit[r][c]) {
-                    rect.setFill(Color.rgb(15, 15, 20));
+
+                    // Keep doors visible even in darkness
+                    if (t == DOOR_LOCKED) {
+                        rect.setFill(Color.rgb(15, 15, 20));     // dark background
+                        setCellIcon(r, c, doorClosedImage, "door");
+                    }
+                    else if (t == DOOR_OPEN) {
+                        rect.setFill(Color.rgb(15, 15, 20));     // dark background
+                        setCellIcon(r, c, doorOpenImage, "door");
+                    }
+
+                    // Keep lamps visible even in darkness 
+                    else if (t == LAMP_OFF) {
+                        rect.setFill(Color.rgb(245, 215, 120));
+                        setCellIcon(r, c, lampOffImage, "lamp");
+                    }
+                    else if (t == LAMP_ON) {
+                        rect.setFill(Color.rgb(255, 245, 170));
+                        setCellIcon(r, c, lampOnImage, "lamp");
+                    }
+                    else if (t == SWITCH) {
+                        rect.setFill(Color.rgb(15, 15, 20)); // dark background
+                        setCellIcon(r, c, switchImage, "switch");
+                    }
+
+                    // Everything else stays dark
+                    else {
+                        rect.setFill(Color.rgb(75, 75, 90));
+                    }
+
                     continue;
                 }
 
                 // lit colors
-                if (t == EXIT) rect.setFill(Color.rgb(160, 230, 160));
+                if (t == EXIT) {
+                    rect.setFill(Color.rgb(220, 220, 235)); // floor background
+                    setCellIcon(r, c, exitImage, "exit");
+                }
                 else if (t == LAMP_OFF) rect.setFill(Color.rgb(245, 215, 120));
                 else if (t == LAMP_ON) rect.setFill(Color.rgb(255, 245, 170));
-                else if (t == SWITCH) rect.setFill(Color.rgb(140, 200, 255));
-                else if (t == DOOR_LOCKED) rect.setFill(Color.rgb(240, 150, 150));
-                else if (t == DOOR_OPEN) rect.setFill(Color.rgb(210, 210, 210));
+                
                 else rect.setFill(Color.rgb(220, 220, 235)); // floor
-            }
-        }
 
+                // draw lamp icons on lit tiles
+                if (t == LAMP_OFF) setCellIcon(r, c, lampOffImage, "lamp");
+                else if (t == LAMP_ON) setCellIcon(r, c, lampOnImage, "lamp");
+                
+             // draw door icons
+                if (t == DOOR_LOCKED) {
+                    rect.setFill(Color.rgb(220, 220, 235)); // floor behind
+                    setCellIcon(r, c, doorClosedImage, "door");
+                }
+                else if (t == DOOR_OPEN) {
+                    rect.setFill(Color.rgb(220, 220, 235)); // floor behind
+                    setCellIcon(r, c, doorOpenImage, "door");
+                }
+                else {
+                    setCellIcon(r, c, null, "door");
+                }  
+                if (t == SWITCH) {
+                    rect.setFill(Color.rgb(220, 220, 235)); // floor background
+                    setCellIcon(r, c, switchImage, "switch");
+                }
+                else if (t == EXIT) {
+                    rect.setFill(Color.rgb(15, 15, 20)); // dark background
+                    setCellIcon(r, c, exitImage, "exit");
+                }
+            }
+            
+        }
+        
         // Draw player sprite on top of the current cell
         if (playerView != null) {
             if (lastPr != -1 && lastPc != -1) {
@@ -451,7 +544,6 @@ public class EscapeGame2DFX extends Application {
             lastPr = pr;
             lastPc = pc;
         } else {
-            // fallback if player.png is missing
             tiles[pr][pc].setFill(Color.rgb(255, 190, 80));
         }
     }
