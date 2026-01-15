@@ -14,10 +14,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-
 import javafx.util.Duration;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
 
 public class EscapeGame2DFX extends Application {
 
@@ -63,6 +66,7 @@ public class EscapeGame2DFX extends Application {
     private Scene menuScene;
     private Scene instructionsScene;
     private Scene gameScene;
+    private MediaPlayer bgmPlayer;
 
  // --- Win overlay ---
     private StackPane gameLayer;
@@ -86,7 +90,13 @@ public class EscapeGame2DFX extends Application {
     
  // --- Exit sprite ---
     private Image exitImage;
-   
+    
+ // --- AUDIO ---
+    private AudioClip lampSfx;       // short sound effect
+    private AudioClip winSfx;        // short sound effect
+    private boolean musicOn = true;
+
+    
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -95,12 +105,75 @@ public class EscapeGame2DFX extends Application {
         menuScene = buildMenuScene();
         instructionsScene = buildInstructionsScene();
         gameScene = buildGameScene();
-
+        initAudio(); // start music + load sfx
+        
         stage.setTitle("Escape the Room Within Lights");
         stage.setScene(menuScene);
         stage.show();
     }
- 
+ // =========================
+    //  AUDIO SETUP
+    // =========================
+    private void initAudio() {
+        // Background music (loops)
+        var bgmUrl = getClass().getResource("/audio/song1.wav");
+        
+        if (bgmUrl != null) {
+            try {
+                Media bgm = new Media(bgmUrl.toExternalForm());
+                bgmPlayer = new MediaPlayer(bgm);
+                bgmPlayer.setVolume(0.25);
+
+             // Loop the music 
+             bgmPlayer.setOnEndOfMedia(() -> {
+            	 bgmPlayer.seek(Duration.ZERO); 
+                 bgmPlayer.play();
+             });
+
+             bgmPlayer.play();
+             
+            } catch (Exception ex) {
+                System.out.println("BGM failed to load: " + ex.getMessage());
+                bgmPlayer = null;
+            }
+        } else {
+            System.out.println("Missing /audio/song1.wav (place it under src/main/resources/audio/)");
+        }
+
+        // Lamp toggle SFX
+        var lampUrl = getClass().getResource("/audio/lamp.wav"); 
+        if (lampUrl != null) {
+            lampSfx = new AudioClip(lampUrl.toExternalForm());
+            lampSfx.setVolume(0.7);
+        } else {
+            System.out.println("Missing /audio/song1.wav");
+        }
+
+        // Win SFX
+        var winUrl = getClass().getResource("/audio/win.wav"); 
+        if (winUrl != null) {
+            winSfx = new AudioClip(winUrl.toExternalForm());
+            winSfx.setVolume(0.8);
+        } else {
+            System.out.println("Missing /audio/song1.wav");
+        }
+    }
+    private void toggleMusic(Button button) {
+        musicOn = !musicOn;
+        if (bgmPlayer != null) {
+            if (musicOn) {
+                bgmPlayer.play();
+                button.setText("Music: On");
+            } else {
+                bgmPlayer.pause();
+                button.setText("Music: Off");
+            }
+        } else {
+            // No bgm loaded
+            button.setText(musicOn ? "Music: On" : "Music: Off");
+        }
+    }
+    
     // =========================
     //  Screen 1: Main Menu
     // =========================
@@ -172,10 +245,11 @@ public class EscapeGame2DFX extends Application {
     // =========================
     private Scene buildGameScene() {
         // status bar + buttons
-        status = new Label("Click a lit neighbor tile to move. Click nearby L/S to interact. Reach E to win.");
+        status = new Label("Click a lit neighbor tile to move. Click nearby L/S to interact. Reach Exit to Escape.");
         Button backToMenu = new Button("Menu");
         Button restart = new Button("Restart");
-
+        Button musicToggle = new Button("Music: On");
+        
         backToMenu.setOnAction(e -> {
         	if (winImage != null) winImage.setVisible(false);
             stage.setScene(menuScene);
@@ -186,8 +260,10 @@ public class EscapeGame2DFX extends Application {
             refresh();
             status.setText("Restarted.");
         });
-
-        HBox top = new HBox(12, backToMenu, restart, status);
+        
+        musicToggle.setOnAction(e -> toggleMusic(musicToggle));
+        HBox top = new HBox(12, backToMenu, restart, musicToggle, status);
+     //   HBox top = new HBox(12, backToMenu, restart, status);
         top.setAlignment(Pos.CENTER_LEFT);
         top.setPadding(new Insets(10));
 
