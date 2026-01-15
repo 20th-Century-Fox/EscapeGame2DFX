@@ -14,10 +14,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 
-
+import javafx.util.Duration;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 
@@ -70,7 +68,25 @@ public class EscapeGame2DFX extends Application {
     private StackPane gameLayer;
     private ImageView winImage;
     
-     
+ // --- Player sprite ---
+    private ImageView playerView;
+    private Image playerImage;
+    private int lastPr = -1, lastPc = -1;
+
+    // --- Lamp sprite ---
+    private Image lampOffImage;
+    private Image lampOnImage;
+
+ // --- Door sprite ---
+    private Image doorClosedImage;
+    private Image doorOpenImage;
+    
+ // --- Switch sprite ---
+    private Image switchImage;
+    
+ // --- Exit sprite ---
+    private Image exitImage;
+   
     @Override
     public void start(Stage stage) {
         this.stage = stage;
@@ -84,7 +100,7 @@ public class EscapeGame2DFX extends Application {
         stage.setScene(menuScene);
         stage.show();
     }
-
+ 
     // =========================
     //  Screen 1: Main Menu
     // =========================
@@ -160,7 +176,11 @@ public class EscapeGame2DFX extends Application {
         Button backToMenu = new Button("Menu");
         Button restart = new Button("Restart");
 
-        backToMenu.setOnAction(e -> stage.setScene(menuScene));
+        backToMenu.setOnAction(e -> {
+        	if (winImage != null) winImage.setVisible(false);
+            stage.setScene(menuScene);
+        });
+
         restart.setOnAction(e -> {
             resetGame();
             refresh();
@@ -204,14 +224,14 @@ public class EscapeGame2DFX extends Application {
     }
 
     private void resetGame() {
-        loadLevel(LEVEL1);
+    	loadLevel(LEVEL1);
         recomputeLighting();
-        winImage.setVisible(false);
+     
 
-        // rebuild grid UI if needed (first time or after a different-size level)
-        tiles = new Rectangle[grid.length][grid[0].length];
+        if (winImage != null) winImage.setVisible(false);
+        lastPr = -1; lastPc = -1;
+
         buildBoard();
-
         refresh();
     }
 
@@ -233,9 +253,25 @@ public class EscapeGame2DFX extends Application {
             }
         }
     }
-    
+ 
     private void buildBoard() {
         board.getChildren().clear();
+
+        cellPanes = new StackPane[grid.length][grid[0].length];
+        tiles = new Rectangle[grid.length][grid[0].length];
+
+        // Load player image once (from resources)
+        var purl = getClass().getResource("/images/player.png");
+        if (purl != null) {
+            playerImage = new Image(purl.toExternalForm());
+            playerView = new ImageView(playerImage);
+            playerView.setPreserveRatio(true);
+            playerView.setFitWidth(TILE * 0.8);
+            playerView.setFitHeight(TILE * 0.8);
+        } else {
+            playerView = null; // fallback if image missing
+        }
+
         for (int r = 0; r < grid.length; r++) {
             for (int c = 0; c < grid[0].length; c++) {
                 Rectangle rect = new Rectangle(TILE, TILE);
@@ -247,11 +283,18 @@ public class EscapeGame2DFX extends Application {
                     handleClick(rr, cc);
                 });
 
+                StackPane cell = new StackPane(rect);
+                cell.setAlignment(Pos.CENTER);
+
                 tiles[r][c] = rect;
-                board.add(rect, c, r);
+                cellPanes[r][c] = cell;
+
+                board.add(cell, c, r);
             }
         }
     }
+
+    
     
     private void handleClick(int r, int c) {
         // 1) Interact if clicked is on self/adjacent AND is an object
@@ -301,7 +344,7 @@ public class EscapeGame2DFX extends Application {
         pr = nr; pc = nc;
         
         if (grid[pr][pc] == EXIT) {
-            status.setText("YOU WIN!");
+            status.setText("YOU ESCAPED!");
             winImage.setVisible(true);
         } else {
             status.setText("Moved.");
@@ -399,8 +442,18 @@ public class EscapeGame2DFX extends Application {
             }
         }
 
-        // player highlight
-        tiles[pr][pc].setFill(Color.rgb(255, 190, 80));
+        // Draw player sprite on top of the current cell
+        if (playerView != null) {
+            if (lastPr != -1 && lastPc != -1) {
+                cellPanes[lastPr][lastPc].getChildren().remove(playerView);
+            }
+            cellPanes[pr][pc].getChildren().add(playerView);
+            lastPr = pr;
+            lastPc = pc;
+        } else {
+            // fallback if player.png is missing
+            tiles[pr][pc].setFill(Color.rgb(255, 190, 80));
+        }
     }
 
     public static void main(String[] args) {
