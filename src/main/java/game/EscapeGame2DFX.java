@@ -218,17 +218,20 @@ public class EscapeGame2DFX extends Application {
         header.setFont(Font.font(22));
 
         Label body = new Label(
-                "- Use the mouse to play.\n" +
-                "- You can only move onto LIT tiles.\n" +
-                "- Click a neighboring tile to move.\n" +
-                "- Click a lamp (L) next to you to turn it ON/OFF.\n" +
-                "- Click a switch (S) next to you to toggle doors.\n" +
-                "- Reach the exit (E) to clear the room.\n\n" +
-                "Tile meanings:\n" +
-                "  # = wall (blocks movement + light)\n" +
-                "  L = lamp (off)      * = lamp (on)\n" +
-                "  S = switch          D = locked door    / = open door\n" +
-                "  E = exit\n"
+        		 "- Use the mouse to play.\n" +
+        	     "- You can only move onto neighbour LIT tiles and tiles with door open.\n" +
+        	     "- You can not move onto swith or lamp  tiles.\n" +		
+        	     "- You can only move in up/down/left/right directions.\n" +		
+        	     "- You can swith door and turn on/off lamps in diagonal directions.\n" +	
+        	     "- You can only have at most three lamps on to save energy.\n" +
+        	     "- You must have at least one lamp on.\n" +
+        	     "- You can mute the music by click music off button after you start the game.\n" +
+        	     "- Each time you turn on a lamp, it lights on tiles with radius of 4 tiles.\n" +
+        	     "- Click a neighboring tile to move.\n" +
+        	     "- Click a lamp next to you to turn it ON/OFF.\n" +
+        	     "- Click a switch next to you to toggle doors.\n" +
+        	     "- You can use as many moves as needed, but the fewer the better.\n" +
+        	     "- Reach the exit (E) to clear the room.\n"  
         );
         body.setFont(Font.font(16));
         
@@ -466,7 +469,7 @@ public class EscapeGame2DFX extends Application {
     private void recomputeLighting() {
         for (int r = 0; r < lit.length; r++) Arrays.fill(lit[r], false);
 
-        ArrayDeque<int[]> q = new ArrayDeque<>();
+   /*     ArrayDeque<int[]> q = new ArrayDeque<>();
 
         // Start BFS from all LAMP_ON tiles
         for (int r = 0; r < grid.length; r++) {
@@ -492,6 +495,32 @@ public class EscapeGame2DFX extends Application {
                 lit[nr][nc] = true;
                 q.addLast(new int[]{nr, nc});
             }
+        }*/
+        final int R = 4; // light radius in tiles (change this to 3/5/6 to tune difficulty)
+
+        // For every lamp that is ON, light up tiles within radius R (with wall blocking)
+        for (int lr = 0; lr < grid.length; lr++) {
+            for (int lc = 0; lc < grid[0].length; lc++) {
+
+                if (grid[lr][lc] != LAMP_ON) continue;
+
+                for (int r = lr - R; r <= lr + R; r++) {
+                    for (int c = lc - R; c <= lc + R; c++) {
+                        if (!inBounds(r, c)) continue;
+
+                        int dr = r - lr;
+                        int dc = c - lc;
+
+                        // circle radius check
+                        if (dr * dr + dc * dc > R * R) continue;
+
+                        // walls/locked doors block light (line-of-sight)
+                        if (blockedByWall(lr, lc, r, c)) continue;
+
+                        lit[r][c] = true;
+                    }
+                }
+            }
         }
     }
     
@@ -511,7 +540,21 @@ public class EscapeGame2DFX extends Application {
     private boolean blocksLight(char t) {
         return t == WALL || t == DOOR_LOCKED;
     }
-    
+ // Returns true if the straight line from (r0,c0) to (r1,c1) passes through a wall/locked door.
+    private boolean blockedByWall(int r0, int c0, int r1, int c1) {
+        int steps = Math.max(Math.abs(r1 - r0), Math.abs(c1 - c0));
+        if (steps == 0) return false;
+
+        for (int i = 1; i <= steps; i++) {
+            double t = i / (double) steps;
+            int r = (int) Math.round(r0 + (r1 - r0) * t);
+            int c = (int) Math.round(c0 + (c1 - c0) * t);
+
+            // if we hit a light-blocking tile, the light is blocked
+            if (blocksLight(grid[r][c])) return true;
+        }
+        return false;
+    }
     private boolean inBounds(int r, int c) {
         return r >= 0 && r < grid.length && c >= 0 && c < grid[0].length;
     }
