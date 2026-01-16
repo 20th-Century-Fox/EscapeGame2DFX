@@ -21,11 +21,12 @@ import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 
-
 public class EscapeGame2DFX extends Application {
 
     // --- Level symbols ---
-    // # wall, . floor, @ player, L lamp(off), * lamp(on), S switch, D locked door, / open door, E exit
+    // # wall, . floor, @ player, L lamp(off), * lamp(on), 
+	// S switch, D locked door, / open door, E exit
+	// This part can be changed later for more fun.
     private static final String[] LEVEL1 = {
     		"@.*###########",
             "#.....D..L..##",
@@ -93,8 +94,8 @@ public class EscapeGame2DFX extends Application {
     private Image exitImage;
     
  // --- AUDIO ---
-    private AudioClip lampSfx;       // short sound effect
-    private AudioClip winSfx;        // short sound effect
+    private AudioClip lampSfx;       // short sound effect for lamp turn on/off
+    private AudioClip winSfx;        // short sound effect for success
     private boolean musicOn = true;
 
     
@@ -106,16 +107,14 @@ public class EscapeGame2DFX extends Application {
         menuScene = buildMenuScene();
         instructionsScene = buildInstructionsScene();
         gameScene = buildGameScene();
-        initAudio(); // start music + load sfx
+        initAudio(); // start music
         
         stage.setTitle("Escape the Room Within Lights");
         stage.setScene(menuScene);
         stage.show();
     }
- // =========================
-    //  AUDIO SETUP
-    // =========================
-    private void initAudio() {
+     //  AUDIO SETUP
+       private void initAudio() {
         // Background music (loops)
         var bgmUrl = getClass().getResource("/audio/song1.wav");
         
@@ -172,15 +171,12 @@ public class EscapeGame2DFX extends Application {
                 button.setText("Music: Off");
             }
         } else {
-            // No bgm loaded
-            button.setText(musicOn ? "Music: On" : "Music: Off");
+              button.setText(musicOn ? "Music: On" : "Music: Off");
         }
     }
     
-    // =========================
-    //  Screen 1: Main Menu
-    // =========================
-    private Scene buildMenuScene() {
+      //  Screen 1: Main Menu
+      private Scene buildMenuScene() {
         Label title = new Label("Escape the Room Within Lights");
         title.setFont(Font.font(24));
 
@@ -209,11 +205,9 @@ public class EscapeGame2DFX extends Application {
 
         return new Scene(root, 720, 520);
     }
-    
- // =========================
-    //  Screen 2: Instructions
-    // =========================
-    private Scene buildInstructionsScene() {
+      
+     //  Screen 2: Instructions
+      private Scene buildInstructionsScene() {
         Label header = new Label("HOW TO PLAY");
         header.setFont(Font.font(22));
 
@@ -243,11 +237,8 @@ public class EscapeGame2DFX extends Application {
         return new Scene(root, 720, 520);
     }
 
-    // =========================
     //  Screen 3: Game Screen
-    // =========================
     private Scene buildGameScene() {
-        // status bar + buttons
         status = new Label("Click a lit neighbor tile to move. Click nearby L/S to interact. Reach Exit to Escape.");
         Button backToMenu = new Button("Menu");
         Button restart = new Button("Restart");
@@ -266,7 +257,6 @@ public class EscapeGame2DFX extends Application {
         
         musicToggle.setOnAction(e -> toggleMusic(musicToggle));
         HBox top = new HBox(12, backToMenu, restart, musicToggle, status);
-     //   HBox top = new HBox(12, backToMenu, restart, status);
         top.setAlignment(Pos.CENTER_LEFT);
         top.setPadding(new Insets(10));
 
@@ -288,15 +278,12 @@ public class EscapeGame2DFX extends Application {
             winImage = new ImageView();
             winImage.setVisible(false);
             System.out.println("Missing /images/you_win.png");
-        }
-        
+        }        
         StackPane gameLayer = new StackPane(board,winImage);
         BorderPane root = new BorderPane();
         root.setTop(top);
         root.setCenter(gameLayer);
-
-     // Build the board UI once; we will fill it when we resetGame()
-        // (tiles array depends on grid size, so we build after resetGame)
+        
         resetGame();
 
         return new Scene(root, 720, 520);
@@ -339,7 +326,7 @@ public class EscapeGame2DFX extends Application {
         cellPanes = new StackPane[grid.length][grid[0].length];
         tiles = new Rectangle[grid.length][grid[0].length];
 
-        // Load player image once (from resources)
+        // Load player, door, switch, lamp, exit images 
         var purl = getClass().getResource("/images/player.png");
         if (purl != null) {
             playerImage = new Image(purl.toExternalForm());
@@ -348,17 +335,15 @@ public class EscapeGame2DFX extends Application {
             playerView.setFitWidth(TILE * 0.9);
             playerView.setFitHeight(TILE * 0.9);
         } else {
-            playerView = null; // fallback if image missing
+            playerView = null; 
             System.out.println("Missing /images/player.png");
         }
 
-        // Load lamp images once
         var lOff = getClass().getResource("/images/lamp_off.png");
         var lOn  = getClass().getResource("/images/lamp_on.png");
         lampOffImage = (lOff == null) ? null : new Image(lOff.toExternalForm());
         lampOnImage  = (lOn  == null) ? null : new Image(lOn.toExternalForm());
         
-        // Load door images once
         var dClosed = getClass().getResource("/images/door_closed.png");
         var dOpen   = getClass().getResource("/images/door_open.png");
         doorClosedImage = (dClosed == null) ? null : new Image(dClosed.toExternalForm());
@@ -391,15 +376,12 @@ public class EscapeGame2DFX extends Application {
             }
         }
     }
-
-    
-    
+      
     private void handleClick(int r, int c) {
-        // 1) Interact if clicked is on self/adjacent AND is an object
         if (isNeighborOrSelf(r, c, pr, pc)) {
             char t = grid[r][c];
             if (t == LAMP_OFF) {
-            	// Enforce at most MAX_LAMPS_ON lamps ON
+            	// Enforce at most MAX_LAMPS_ON (3, can be changed later) lamps ON
                 if (countLampsOn() >= MAX_LAMPS_ON) {
                     status.setText("You can only have " + MAX_LAMPS_ON + " lamps ON at a time.");
                     return;
@@ -427,7 +409,6 @@ public class EscapeGame2DFX extends Application {
                 return;
             }
         }
-        
      // 2) Otherwise try move if clicked is a 4-neighbor tile
         if (is4Neighbor(r, c, pr, pc)) {
             tryMove(r, c);
@@ -445,7 +426,6 @@ public class EscapeGame2DFX extends Application {
             status.setText("That tile is dark. Turn on a lamp to light a path.");
             return;
         }
-
         pr = nr; pc = nc;
         moveCount++;
         
@@ -454,7 +434,6 @@ public class EscapeGame2DFX extends Application {
                  status.setText("Too many lamps ON! You must escape with at most " + MAX_LAMPS_ON + ".");
                  return;
              }
-          //  status.setText("YOU ESCAPED!");
             status.setText("You escaped in " + moveCount + " moves.");
             if (winSfx != null) winSfx.play();
             winImage.setVisible(true);
@@ -466,34 +445,7 @@ public class EscapeGame2DFX extends Application {
     private void recomputeLighting() {
         for (int r = 0; r < lit.length; r++) Arrays.fill(lit[r], false);
 
-   /*     ArrayDeque<int[]> q = new ArrayDeque<>();
-
-        // Start BFS from all LAMP_ON tiles
-        for (int r = 0; r < grid.length; r++) {
-            for (int c = 0; c < grid[0].length; c++) {
-                if (grid[r][c] == LAMP_ON) {
-                    lit[r][c] = true;
-                    q.add(new int[]{r, c});
-                }
-            }
-        }
-        
-        while (!q.isEmpty()) {
-            int[] cur = q.removeFirst();
-            int r = cur[0], c = cur[1];
-
-            int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
-            for (int[] d : dirs) {
-                int nr = r + d[0], nc = c + d[1];
-                if (!inBounds(nr, nc)) continue;
-                if (lit[nr][nc]) continue;
-                if (blocksLight(grid[nr][nc])) continue;
-
-                lit[nr][nc] = true;
-                q.addLast(new int[]{nr, nc});
-            }
-        }*/
-        final int R = 4; // light radius in tiles (change this to 3/5/6 to tune difficulty)
+        final int R = 4; // light radius in tiles (change this to 3/5/6 to different difficulty)
 
         // For every lamp that is ON, light up tiles within radius R (with wall blocking)
         for (int lr = 0; lr < grid.length; lr++) {
@@ -579,7 +531,7 @@ public class EscapeGame2DFX extends Application {
         if (img == null) return;
 
         ImageView iv = new ImageView(img);
-        iv.setMouseTransparent(true); // ✅ allow clicks to pass through
+        iv.setMouseTransparent(true); 
         iv.setPreserveRatio(true);
         iv.setFitWidth(TILE * 0.95);
         iv.setFitHeight(TILE * 0.95);
@@ -599,26 +551,23 @@ public class EscapeGame2DFX extends Application {
                 setCellIcon(r, c, null, "switch");
                 setCellIcon(r, c, null, "exit");
 
-
-                // walls always visible
+                // walls always visible (can be changed)
                 if (t == WALL) {
                     rect.setFill(Color.rgb(75, 75, 90));
                     continue;
                 }
 
                 if (!lit[r][c]) {
-
-                    // Keep doors visible even in darkness
+                    // Keep doors visible even in darkness (can be changed)
                     if (t == DOOR_LOCKED) {
-                        rect.setFill(Color.rgb(15, 15, 20));     // dark background
+                        rect.setFill(Color.rgb(15, 15, 20));     
                         setCellIcon(r, c, doorClosedImage, "door");
                     }
                     else if (t == DOOR_OPEN) {
-                        rect.setFill(Color.rgb(15, 15, 20));     // dark background
+                        rect.setFill(Color.rgb(15, 15, 20));     
                         setCellIcon(r, c, doorOpenImage, "door");
                     }
-
-                    // Keep lamps visible even in darkness 
+                    // Keep lamps visible even in darkness (can be changed)
                     else if (t == LAMP_OFF) {
                         rect.setFill(Color.rgb(245, 215, 120));
                         setCellIcon(r, c, lampOffImage, "lamp");
@@ -631,12 +580,10 @@ public class EscapeGame2DFX extends Application {
                         rect.setFill(Color.rgb(15, 15, 20)); // dark background
                         setCellIcon(r, c, switchImage, "switch");
                     }
-
                     // Everything else stays dark
                     else {
                         rect.setFill(Color.rgb(75, 75, 90));
                     }
-
                     continue;
                 }
 
@@ -676,8 +623,7 @@ public class EscapeGame2DFX extends Application {
                 }
             }
             
-        }
-        
+        }    
         // Draw player sprite on top of the current cell
         if (playerView != null) {
             if (lastPr != -1 && lastPc != -1) {
