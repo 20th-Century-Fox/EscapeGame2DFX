@@ -46,6 +46,7 @@ public class EscapeGame2DFX extends Application {
     private static final char SWITCH = 'S';
     private static final char DOOR_LOCKED = 'D';
     private static final char DOOR_OPEN = '/';
+    private static final int MAX_LAMPS_ON = 3;
 
     // --- Model ---
     private char[][] grid;
@@ -398,6 +399,11 @@ public class EscapeGame2DFX extends Application {
         if (isNeighborOrSelf(r, c, pr, pc)) {
             char t = grid[r][c];
             if (t == LAMP_OFF) {
+            	// Enforce at most MAX_LAMPS_ON lamps ON
+                if (countLampsOn() >= MAX_LAMPS_ON) {
+                    status.setText("You can only have " + MAX_LAMPS_ON + " lamps ON at a time.");
+                    return;
+                }
                 grid[r][c] = LAMP_ON;
                 lampSfx.play();
                 recomputeLighting();
@@ -444,7 +450,11 @@ public class EscapeGame2DFX extends Application {
         moveCount++;
         
         if (grid[pr][pc] == EXIT) {
-            status.setText("YOU ESCAPED!");
+        	 if (countLampsOn() > MAX_LAMPS_ON) {
+                 status.setText("Too many lamps ON! You must escape with at most " + MAX_LAMPS_ON + ".");
+                 return;
+             }
+          //  status.setText("YOU ESCAPED!");
             status.setText("You escaped in " + moveCount + " moves.");
             if (winSfx != null) winSfx.play();
             winImage.setVisible(true);
@@ -513,6 +523,16 @@ public class EscapeGame2DFX extends Application {
     private boolean isNeighborOrSelf(int r, int c, int pr, int pc) {
         return Math.abs(r - pr) <= 1 && Math.abs(c - pc) <= 1;
     }  
+ // helper to count on lamps
+    private int countLampsOn() {
+        int count = 0;
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[0].length; c++) {
+                if (grid[r][c] == LAMP_ON) count++;
+            }
+        }
+        return count;
+    }
  // Helper: set/remove a tagged icon (lamp) in a cell
     private void setCellIcon(int r, int c, Image img, String tag) {
         cellPanes[r][c].getChildren().removeIf(n -> tag.equals(n.getUserData()));
