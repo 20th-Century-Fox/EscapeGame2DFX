@@ -221,13 +221,10 @@ public class EscapeGame2DFX extends Application {
         		 "- Use the mouse to play.\n" +
         	     "- You can only move onto neighbour LIT tiles and tiles with door open.\n" +
         	     "- You can not move onto swith or lamp  tiles.\n" +		
-        	     "- You can only move in up/down/left/right directions.\n" +		
-        	     "- You can swith door and turn on/off lamps in diagonal directions.\n" +	
-        	     "- You can only have at most three lamps on to save energy.\n" +
-        	     "- You must have at least one lamp on.\n" +
+        	     "- You can only have at most three lamps and at least one lamp on at the same time.\n" +
         	     "- You can mute the music by click music off button after you start the game.\n" +
         	     "- Each time you turn on a lamp, it lights on tiles with radius of 4 tiles.\n" +
-        	     "- Click a neighboring tile to move.\n" +
+        	     "- Click a neighboring tile to move, in up/down/left/right directions.\n" +
         	     "- Click a lamp next to you to turn it ON/OFF.\n" +
         	     "- Click a switch next to you to toggle doors.\n" +
         	     "- You can use as many moves as needed, but the fewer the better.\n" +
