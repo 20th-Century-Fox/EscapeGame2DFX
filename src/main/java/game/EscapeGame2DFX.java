@@ -51,7 +51,7 @@ public class EscapeGame2DFX extends Application {
     private char[][] grid;
     private boolean[][] lit;
     private int pr, pc; // player row/col
-
+    private int moveCount;
        
  // --- UI (game screen) ---
     private GridPane board;
@@ -304,7 +304,7 @@ public class EscapeGame2DFX extends Application {
     private void resetGame() {
     	loadLevel(LEVEL1);
         recomputeLighting();
-     
+        moveCount = 0; 
 
         if (winImage != null) winImage.setVisible(false);
         lastPr = -1; lastPc = -1;
@@ -441,9 +441,11 @@ public class EscapeGame2DFX extends Application {
         }
 
         pr = nr; pc = nc;
+        moveCount++;
         
         if (grid[pr][pc] == EXIT) {
             status.setText("YOU ESCAPED!");
+            status.setText("You escaped in " + moveCount + " moves.");
             if (winSfx != null) winSfx.play();
             winImage.setVisible(true);
         } else {
