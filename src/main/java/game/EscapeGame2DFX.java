@@ -145,8 +145,9 @@ public class EscapeGame2DFX extends Application {
         if (lampUrl != null) {
             lampSfx = new AudioClip(lampUrl.toExternalForm());
             lampSfx.setVolume(0.7);
+            
         } else {
-            System.out.println("Missing /audio/song1.wav");
+            System.out.println("Missing /audio/lamp.wav");
         }
 
         // Win SFX
@@ -154,8 +155,9 @@ public class EscapeGame2DFX extends Application {
         if (winUrl != null) {
             winSfx = new AudioClip(winUrl.toExternalForm());
             winSfx.setVolume(0.8);
+           
         } else {
-            System.out.println("Missing /audio/song1.wav");
+            System.out.println("Missing /audio/win.wav");
         }
     }
     private void toggleMusic(Button button) {
@@ -397,6 +399,7 @@ public class EscapeGame2DFX extends Application {
             char t = grid[r][c];
             if (t == LAMP_OFF) {
                 grid[r][c] = LAMP_ON;
+                lampSfx.play();
                 recomputeLighting();
                 status.setText("Lamp turned ON.");
                 refresh();
@@ -404,6 +407,7 @@ public class EscapeGame2DFX extends Application {
             }
             if (t == LAMP_ON) {
                 grid[r][c] = LAMP_OFF;
+                lampSfx.play();
                 recomputeLighting();
                 status.setText("Lamp turned OFF.");
                 refresh();
@@ -440,6 +444,7 @@ public class EscapeGame2DFX extends Application {
         
         if (grid[pr][pc] == EXIT) {
             status.setText("YOU ESCAPED!");
+            if (winSfx != null) winSfx.play();
             winImage.setVisible(true);
         } else {
             status.setText("Moved.");
